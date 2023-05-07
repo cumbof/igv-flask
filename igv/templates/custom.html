@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+		<meta name="description" content="IGV Tool">
+		<meta name="author" content="Fabio Cumbo">
+		<link rel="shortcut icon" href="https://igv.org/web/img/favicon.ico">
+		
+		<title>IGV Custom</title>
+
+        <script src="https://cdn.jsdelivr.net/npm/igv@{{ config['igv_version'] }}/dist/igv.js"></script>
+    </head>
+
+    <body>
+		<div id="igv-div"></div>
+
+		<script type="module">
+			var igvDiv = document.getElementById("igv-div");
+
+			var options =
+			{
+				reference: {
+					"fastaURL": "{{ url_for('static', filename=fasta) }}",
+					"indexURL": "{{ url_for('static', filename=index) }}",
+				}
+			};
+
+			igv.createBrowser(igvDiv, options)
+					.then(function (browser) {
+						{% if config.igv_session %}
+							browser.loadSessionObject(JSON.parse('{{ config["igv_session"]|tojson }}'));
+						{% endif %}
+
+						console.log("Created IGV browser");
+					});
+
+			{% if config.gxit %}
+				window.onbeforeunload = function() {
+					{% if config.dump_session %}
+						const json = browser.toJSON();
+
+						(async () => {
+							const rawResponse = await fetch('./igv/session', {
+								method: 'POST',
+								headers: {
+									'Accept': 'application/json',
+									'Content-Type': 'application/json'
+								},
+								body: JSON.stringify(json)
+							});
+							const content = await rawResponse.json();
+						})();
+
+						fetch("./igv/session")
+					{% endif %}
+
+					fetch("./shutdown");
+				} 
+			{% endif %}
+		</script>
+    </body>
+</html>
