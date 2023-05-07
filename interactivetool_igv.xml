@@ -1,0 +1,93 @@
+<tool id="interactive_tool_igv_app" name="IGV" tool_type="interactive" version="0.1" license="MIT">
+    <description>Interactive Genome Visualization tool</description>
+    
+    <requirements>
+        <!--<container type="docker">fabiocumbo/igv:0.1</container>-->
+        <container type="docker">docker.io/library/igv-tool</container>
+    </requirements>
+    
+    <entry_points>
+        <entry_point name="IGV Tool" requires_domain="true">
+            <port>5000</port>
+            <url>igv/custom</url>
+        </entry_point>
+    </entry_points>
+    
+    <command><![CDATA[
+        #import re
+        mkdir -p ./igv/data &&
+        mkdir -p ./igv/output &&
+
+        #set $input_cleaned_name = re.sub('[^\w\-\.\s]', '_', str($input.element_identifier))
+        ln -sf '$input' './igv/data/${input_cleaned_name}.${input.ext}' &&
+
+        #set $index_cleaned_name = re.sub('[^\w\-\.\s]', '_', str($index.element_identifier))
+        ln -sf '$index' './igv/data/${index_cleaned_name}.${index.ext}' &&
+
+        #if $igv_session.add_session == "true":
+            #set $cleaned_session_name = re.sub('[^\w\-\.\s]', '_', str($session.element_identifier))
+            ln -sf '$session' './igv/data/${cleaned_session_name}.${session.ext}' &&
+        #end if
+
+        igv --host '0.0.0.0' --port 5000 --gxit 
+            --input './igv/data/${input_cleaned_name}.${input.ext}' 
+            --index './igv/data/${index_cleaned_name}.${index.ext}' 
+            --dump-session './igv/output/igv-session.json' 
+        #if $igv_session.add_session == "true":
+            --igv-session './igv/data/${cleaned_session_name}.${session.ext}' 
+        #end if
+        #if $run_it == "true":
+            --run-it
+        #end if
+        &&
+
+        cp './igv/output/igv-session.json' '$igv_session'
+      ]]>
+    </command>
+    
+    <inputs>
+        <param name="input" type="data" format="fasta" label="Input fasta file" />
+        <param name="index" type="data" format="fai" label="Input fasta index file" />
+
+        <conditional name="igv_session">
+            <param name="add_session" type="select" 
+                   label="Add IGV session" 
+                   help="If selected, allows to resume a IGV session">
+                <option value="false" selected="true">Disabled</option>
+                <option value="true">Enabled</option>
+            </param>
+            
+            <when value="false" />
+
+            <when value="true">
+                <param name="session" type="data" format="json" label="IGV session file" />
+            </when>
+        </conditional>
+
+        <param name="run_it" type="boolean" truevalue="true" falsevalue="false" checked="false" label="Execute the tool and return a session." />
+    </inputs>
+    
+    <outputs>
+        <data name="igv_session" format="json" label="IGV Session"></data>
+    </outputs>
+    
+    <tests>
+        <test expect_num_outputs="1">
+            <param name="input" value="test.fasta" />
+            <param name="run_it" value="true" />
+            <output name="igv_session" file="./igv/output/igv-session.json" ftype="json"/>
+        </test>
+    </tests>
+    
+    <help><![CDATA[
+This interactive tool integrates `igv.js`, which is an embeddable interactive genome visualization component developed by the Integrative Genomics Viewer (IGV_) team.
+
+Please visit the official GitHub repository_ for additional information about `igv.js`.
+
+.. _IGV: https://igv.org/
+.. _repository: https://github.com/igvteam/igv.js
+   ]]></help>
+    <citations>
+        <citation type="doi">10.1093/bioinformatics/btac830</citation>
+    </citations>
+</tool>
