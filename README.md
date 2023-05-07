@@ -13,7 +13,7 @@ pip install igv-flask
 In order to start the Flask webserver and rendering `igv.js` over an input fasta file, open your terminal and run the following command:
 
 ```
-igv --host "0.0.0.0" --port 5000 --input ~/myfasta.fna
+igv --host "0.0.0.0" --port 5000 --input ~/myfasta.fna --index ~/myfasta.fai
 ```
 
 Run `igv --help` for a complite list of available options.
