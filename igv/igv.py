@@ -11,7 +11,6 @@ import argparse as ap
 import errno
 import json
 import os
-import shutil
 import sys
 
 from flask import Flask
@@ -140,18 +139,39 @@ def main():
     if args.gxit and args.dump_session and os.path.isfile(args.dump_session):
         raise Exception("The output IGV session file already exists: {}".format(args.dump_session))
 
-    if args.gxit and args.dump_session and args.run_it:
+    if args.gxit and args.dump_session and args.run_it and args.input:
         # Save an empty IGV session file and exit
         # Used for testing purposes only
         with open(args.dump_session, "w+") as igv_session:
             session_dict = {
                 "version": IGV_VERSION,
-                "showSampleNames": False,
-                "reference": {},
-                "locus": "all",
-                "roi": [],
-                "tracks": []
+                "reference": {
+                    "id": os.path.splitext(os.path.basename(args.input))[0],
+                    "name": os.path.splitext(os.path.basename(args.input))[0],
+                    "fastaURL": os.path.join("/static", os.path.basename(args.input))
+                },
+                "wholeGenomeView": True
             }
+
+            if args.index:
+                session_dict["indexURL"] = os.path.basename(args.index)
+
+            else:
+                session_dict["indexed"] = False
+            
+            if args.cytoband:
+                session_dict["cytobandURL"] = os.path.basename(args.cytoband)
+            
+            if args.tracks:
+                session_dict["tracks"] = list()
+
+                for track in args.tracks:
+                    session_dict["tracks"].append(
+                        {
+                            "name": os.path.splitext(os.path.basename(track))[0],
+                            "url": os.path.basename(track)
+                        }
+                    )
 
             json.dump(session_dict, igv_session)
 
@@ -176,31 +196,43 @@ def main():
     app.config["igv_version"] = IGV_VERSION
 
     if args.input:
-        # Copy the input file to the static folder
+        # Symlink the input file in the static folder
         # And add the input file name to the config
-        shutil.copy(args.input, os.path.join(working_dir, "static", os.path.basename(args.input)))
-        app.config["input"] = os.path.basename(args.input)
+        static_input = os.path.join(working_dir, "static", os.path.basename(args.input))
+        if not os.path.exists(static_input):
+            os.symlink(args.input, static_input)
+
+        app.config["input"] = os.path.basename(static_input)
 
         if args.index:
             # Do the same with the index file
-            shutil.copy(args.index, os.path.join(working_dir, "static", os.path.basename(args.index)))
-            app.config["index"] = os.path.basename(args.index)
+            static_index = os.path.join(working_dir, "static", os.path.basename(args.index))
+            if not os.path.exists(static_index):
+                os.symlink(args.index, static_index)
 
-        if args.index:
+            app.config["index"] = os.path.basename(static_index)
+
+        if args.cytoband:
             # Do the same with the cytoband file
-            shutil.copy(args.cytoband, os.path.join(working_dir, "static", os.path.basename(args.cytoband)))
-            app.config["cytoband"] = os.path.basename(args.cytoband)
+            static_cytoband = os.path.join(working_dir, "static", os.path.basename(args.cytoband))
+            if not os.path.exists(static_cytoband):
+                os.symlink(args.cytoband, static_cytoband)
+
+            app.config["cytoband"] = os.path.basename(static_cytoband)
 
         if args.tracks:
             # And again for tracks
             app.config["tracks"] = list()
 
             for track in args.tracks:
-                shutil.copy(track, os.path.join(working_dir, "static", os.path.basename(track)))
+                static_track = os.path.join(working_dir, "static", os.path.basename(track))
+                if not os.path.exists(static_track):
+                    os.symlink(track, static_track)
+
                 app.config["tracks"].append(
                     {
-                        "name": os.path.splitext(os.path.basename(track))[0],
-                        "track": os.path.basename(track),
+                        "name": os.path.splitext(os.path.basename(static_track))[0],
+                        "track": os.path.basename(static_track),
                     }
                 )
 

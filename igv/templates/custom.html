@@ -39,7 +39,7 @@
 							{% for track in tracks %}
 								{
 									"name": "{{ track['name'] }}",
-									"url": "{{ track['track'] }}",
+									"url": "{{ url_for('static', filename=track['track']) }}",
 								}
 							{% endfor %}
 						]
