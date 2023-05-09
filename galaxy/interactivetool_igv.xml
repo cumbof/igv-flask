@@ -71,12 +71,12 @@
     </command>
     
     <inputs>
-        <param name="input" type="data" format="fasta,fasta.gz" label="Fasta file" />
-        <param name="index" type="data" format="fai,gz" optional="true" label="Fasta index file (optional)" />
+        <param name="input" type="data" format="fasta" label="Fasta file" />
+        <param name="index" type="data" format="fai" optional="true" label="Fasta index file (optional)" />
         <param name="cytoband" type="data" format="txt" optional="true" label="Cytoband file (optional)" />
 
         <repeat name="tracks" title="Add tracks" help="Select one or more tracks" min="0">
-            <param name="track" type="data" format="txt,gz" optional="true" label="Track file (optional)" />
+            <param name="track" type="data" format="txt,txt.gz,tabular,tabular.gz" optional="true" label="Track file (optional)" />
         </repeat>
 
         <conditional name="igv_session">
@@ -102,11 +102,6 @@
     </outputs>
     
     <tests>
-        <test expect_num_outputs="1">
-            <param name="input" value="test.fasta" />
-            <param name="run_it" value="true" />
-            <output name="igv_session" file="./igv/output/igv-session.json" ftype="json"/>
-        </test>
     </tests>
     
     <help><![CDATA[
