@@ -4,7 +4,7 @@ Flask webserver for rendering igv.js
 """
 
 __author__ = "Fabio Cumbo (fabio.cumbo@gmail.com)"
-__version__ = "1.1"
+__version__ = "1.2"
 __date__ = "May 4, 2023"
 
 import argparse as ap
@@ -57,6 +57,18 @@ def read_params():
         help="Path to the input fasta index file"
     )
     p.add_argument(
+        "--cytoband",
+        type=os.path.abspath,
+        help="Path to the input cytoband file"
+    )
+    p.add_argument(
+        "--tracks",
+        type=os.path.abspath,
+        nargs="+",
+        required=False,
+        help="Path to one or more input track files"
+    )
+    p.add_argument(
         "--igv-session",
         type=os.path.abspath,
         dest="igv_session",
@@ -107,9 +119,19 @@ def main():
     if args.input and not os.path.isfile(args.input):
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), args.input)
     
-    # Check whether the input index file exist
+    # Also check whether the input index file exist
     if args.index and not os.path.isfile(args.index):
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), args.index)
+    
+    # Do the same for the cytoband file
+    if args.cytoband and not os.path.isfile(args.cytoband):
+        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), args.cytoband)
+    
+    # Do the same for tracks
+    if args.tracks:
+        for track in args.tracks:
+            if not os.path.isfile(track):
+                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), track)
 
     # Check whether the json igv session file exist
     if args.igv_session and not os.path.isfile(args.igv_session):
@@ -163,6 +185,24 @@ def main():
             # Do the same with the index file
             shutil.copy(args.index, os.path.join(working_dir, "static", os.path.basename(args.index)))
             app.config["index"] = os.path.basename(args.index)
+
+        if args.index:
+            # Do the same with the cytoband file
+            shutil.copy(args.cytoband, os.path.join(working_dir, "static", os.path.basename(args.cytoband)))
+            app.config["cytoband"] = os.path.basename(args.cytoband)
+
+        if args.tracks:
+            # And again for tracks
+            app.config["tracks"] = list()
+
+            for track in args.tracks:
+                shutil.copy(track, os.path.join(working_dir, "static", os.path.basename(track)))
+                app.config["tracks"].append(
+                    {
+                        "name": os.path.splitext(os.path.basename(track))[0],
+                        "track": os.path.basename(track),
+                    }
+                )
 
         # Session file is used in conjunction with an input fasta only
         if args.igv_session:

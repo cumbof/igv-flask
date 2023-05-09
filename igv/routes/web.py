@@ -25,18 +25,19 @@ def page_not_found():
     return resp
 
 
-@blueprint.route("/igv/<string:page>", methods = ["GET", "POST"])
+@blueprint.route("/igv/<string:page>")
 def web(page):
     if page.strip() == "demo" or page.strip() == "index" or page.strip() == "home":
         return render_template("demo.html")
 
     elif page.strip() == "custom":
-        # An IGV session is already into config in case of --igv-session
         return render_template(
             "custom.html",
             name=os.path.splitext(current_app.config["input"])[0],
             fasta=current_app.config["input"],
-            index=current_app.config["index"] if "index" in current_app.config else False
+            index=current_app.config["index"] if "index" in current_app.config else False,
+            cytoband=current_app.config["cytoband"] if "cytoband" in current_app.config else False,
+            tracks=current_app.config["tracks"] if "tracks" in current_app.config else False
         )
 
     elif page.strip() == "session":

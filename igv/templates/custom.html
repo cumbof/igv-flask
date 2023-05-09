@@ -30,7 +30,20 @@
 					{% else %}
 						"indexed": false,
 					{% endif %}
-					"wholeGenomeView": true
+					{% if cytoband %}
+						"cytobandURL": "{{ url_for('static', filename=cytoband) }}",
+					{% endif %}
+					"wholeGenomeView": true,
+					{% if tracks %}
+						"tracks": [
+							{% for track in tracks %}
+								{
+									"name": "{{ track['name'] }}",
+									"url": "{{ track['track'] }}",
+								}
+							{% endfor %}
+						]
+					{% endif %}
 				}
 			};
 
