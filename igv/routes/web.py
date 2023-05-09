@@ -7,7 +7,7 @@ from . import blueprint
 
 @blueprint.route("/")
 def root_route():
-    if "input" in current_app.config and "index" in current_app.config:
+    if "input" in current_app.config:
         return web("custom")
 
     return web("demo")
@@ -32,7 +32,12 @@ def web(page):
 
     elif page.strip() == "custom":
         # An IGV session is already into config in case of --igv-session
-        return render_template("custom.html", fasta=current_app.config["input"], index=current_app.config["index"])
+        return render_template(
+            "custom.html",
+            name=os.path.splitext(current_app.config["input"])[0],
+            fasta=current_app.config["input"],
+            index=current_app.config["index"] if "index" in current_app.config else False
+        )
 
     elif page.strip() == "session":
         igv_session = request.get_json()

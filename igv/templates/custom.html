@@ -22,8 +22,15 @@
 			var options =
 			{
 				reference: {
+					"id": "{{ name) }}",
+					"name": "{{ name) }}",
 					"fastaURL": "{{ url_for('static', filename=fasta) }}",
-					"indexURL": "{{ url_for('static', filename=index) }}",
+					{% if index %}
+						"indexURL": "{{ url_for('static', filename=index) }}",
+					{% else %}
+						"indexed": false,
+					{% endif %}
+					"wholeGenomeView": true
 				}
 			};
 

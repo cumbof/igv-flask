@@ -153,15 +153,16 @@ def main():
     app.config["tool_version"] = __version__
     app.config["igv_version"] = IGV_VERSION
 
-    if args.input and args.index:
+    if args.input:
         # Copy the input file to the static folder
         # And add the input file name to the config
         shutil.copy(args.input, os.path.join(working_dir, "static", os.path.basename(args.input)))
         app.config["input"] = os.path.basename(args.input)
 
-        # Do the same with the index file
-        shutil.copy(args.index, os.path.join(working_dir, "static", os.path.basename(args.index)))
-        app.config["index"] = os.path.basename(args.index)
+        if args.index:
+            # Do the same with the index file
+            shutil.copy(args.index, os.path.join(working_dir, "static", os.path.basename(args.index)))
+            app.config["index"] = os.path.basename(args.index)
 
         # Session file is used in conjunction with an input fasta only
         if args.igv_session:
