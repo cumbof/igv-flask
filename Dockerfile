@@ -3,6 +3,8 @@ FROM python:3.7-alpine
 # Create app directory
 WORKDIR /igv
 
+COPY requirements.txt /igv/requirements.txt
+
 # Install app dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt && \
