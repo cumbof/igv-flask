@@ -21,33 +21,63 @@
         #set $input_cleaned_name = re.sub('[^\w\-\.\s]', '_', str($input.element_identifier))
         ln -sf '$input' './igv/data/${input_cleaned_name}.${input.ext}' &&
 
-        #set $index_cleaned_name = re.sub('[^\w\-\.\s]', '_', str($index.element_identifier))
-        ln -sf '$index' './igv/data/${index_cleaned_name}.${index.ext}' &&
+        #if $index:
+            #set $index_cleaned_name = re.sub('[^\w\-\.\s]', '_', str($index.element_identifier))
+            ln -sf '$index' './igv/data/${index_cleaned_name}.${index.ext}' &&
+        #end if
+
+        #if $cytoband:
+            #set $cytoband_cleaned_name = re.sub('[^\w\-\.\s]', '_', str($cytoband.element_identifier))
+            ln -sf '$cytoband' './igv/data/${cytoband_cleaned_name}.${cytoband.ext}' &&
+        #end if
+        
+        #for $track in $tracks:
+            #set $tracks_list = list()
+            #set $track_cleaned_name = re.sub('[^\w\-\.\s]', '_', str($track.element_identifier))
+            ln -sf '$track' './igv/data/${track_cleaned_name}.${track.ext}' &&
+            $tracks_list.append('./igv/data/${trackfile}')
+        #end for
 
         #if $igv_session.add_session == "true":
             #set $cleaned_session_name = re.sub('[^\w\-\.\s]', '_', str($session.element_identifier))
             ln -sf '$session' './igv/data/${cleaned_session_name}.${session.ext}' &&
         #end if
 
-        igv --host '0.0.0.0' --port 5000 --gxit 
-            --input './igv/data/${input_cleaned_name}.${input.ext}' 
-            --index './igv/data/${index_cleaned_name}.${index.ext}' 
-            --dump-session './igv/output/igv-session.json' 
+        igv --host '0.0.0.0' --port 5000 --gxit
+            --input './igv/data/${input_cleaned_name}.${input.ext}'
+        #if $index:
+            --index './igv/data/${index_cleaned_name}.${index.ext}'
+        #end if
+        #if $cytoband:
+            --cytoband './igv/data/${cytoband_cleaned_name}.${cytoband.ext}'
+        #end if
+            --dump-session './igv/output/igv-session.json'
+        #if $tracks_list:
+            --tracks
+            #for $track in $tracks_list:
+                '#echo $track#'
+            #end for
+        #end if
         #if $igv_session.add_session == "true":
-            --igv-session './igv/data/${cleaned_session_name}.${session.ext}' 
+            --igv-session './igv/data/${cleaned_session_name}.${session.ext}'
         #end if
         #if $run_it == "true":
             --run-it
         #end if
         &&
 
-        cp './igv/output/igv-session.json' '$igv_session'
+        cp './igv/output/igv-session.json' '$out_igv_session'
       ]]>
     </command>
     
     <inputs>
-        <param name="input" type="data" format="fasta" label="Input fasta file" />
-        <param name="index" type="data" format="fai" label="Input fasta index file" />
+        <param name="input" type="data" format="fasta,fasta.gz" label="Fasta file" />
+        <param name="index" type="data" format="fai,gz" optional="true" label="Fasta index file (optional)" />
+        <param name="cytoband" type="data" format="txt" optional="true" label="Cytoband file (optional)" />
+
+        <repeat name="tracks" title="Add tracks" help="Select one or more tracks" min="0">
+            <param name="track" type="data" format="txt,gz" optional="true" label="Track file (optional)" />
+        </repeat>
 
         <conditional name="igv_session">
             <param name="add_session" type="select" 
@@ -68,7 +98,7 @@
     </inputs>
     
     <outputs>
-        <data name="igv_session" format="json" label="IGV Session"></data>
+        <data name="out_igv_session" format="json" label="IGV Session"></data>
     </outputs>
     
     <tests>
