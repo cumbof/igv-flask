@@ -4,7 +4,7 @@ Flask webserver for rendering igv.js
 """
 
 __author__ = "Fabio Cumbo (fabio.cumbo@gmail.com)"
-__version__ = "1.2"
+__version__ = "1.3"
 __date__ = "May 4, 2023"
 
 import argparse as ap

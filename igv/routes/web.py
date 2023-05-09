@@ -58,5 +58,3 @@ def web(page):
 
     else:
         return page_not_found()
-
-
