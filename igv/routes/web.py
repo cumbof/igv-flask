@@ -25,7 +25,7 @@ def page_not_found():
     return resp
 
 
-@blueprint.route("/igv/<string:page>")
+@blueprint.route("/igv/<string:page>", methods=["GET", "POST"])
 def web(page):
     if page.strip() == "demo" or page.strip() == "index" or page.strip() == "home":
         return render_template("demo.html")
@@ -43,12 +43,14 @@ def web(page):
     elif page.strip() == "session":
         igv_session = request.get_json()
 
-        if "igv_session" in current_app.config:
-            with open(current_app.config["igv_session"], "w+") as igv:
+        print(igv_session)
+
+        if "dump_session" in current_app.config:
+            with open(current_app.config["dump_session"], "w+") as igv:
                 igv.write(json.dumps(igv_session))
             
             data = {
-                "message": "IGV session dumped to {}".format(current_app.config["igv_session"]),
+                "message": "IGV session dumped to {}".format(current_app.config["dump_session"]),
                 "type": "Info",
                 "status": 200
             }
