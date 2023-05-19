@@ -4,8 +4,8 @@ Flask webserver for rendering igv.js
 """
 
 __author__ = "Fabio Cumbo (fabio.cumbo@gmail.com)"
-__version__ = "1.3"
-__date__ = "May 4, 2023"
+__version__ = "1.4"
+__date__ = "May 19, 2023"
 
 import argparse as ap
 import errno
@@ -137,7 +137,7 @@ def main():
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), args.igv_session)
 
     if args.gxit and args.dump_session and os.path.isfile(args.dump_session):
-        raise Exception("The output IGV session file already exists: {}".format(args.dump_session))
+        print("Warning: the output IGV session file already exists!")
 
     if args.gxit and args.dump_session and args.run_it and args.input:
         # Save an empty IGV session file and exit
