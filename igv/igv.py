@@ -214,7 +214,7 @@ def main():
                 for track_pos, track in enumerate(args.tracks_path):
                     session_dict["tracks"].append(
                         {
-                            "name": os.path.splitext(os.path.basename(track))[0],
+                            "name": os.path.basename(track),
                             "url": os.path.basename(track),
                             "type": args.tracks_type[track_pos],
                             "format": args.tracks_format[track_pos],
@@ -247,6 +247,7 @@ def main():
         # Symlink the input file in the static folder
         # And add the input file name to the config
         static_input = os.path.join(working_dir, "static", os.path.basename(args.input))
+
         if not os.path.exists(static_input):
             os.symlink(args.input, static_input)
 
@@ -255,6 +256,7 @@ def main():
         if args.index:
             # Do the same with the index file
             static_index = os.path.join(working_dir, "static", os.path.basename(args.index))
+
             if not os.path.exists(static_index):
                 os.symlink(args.index, static_index)
 
@@ -263,6 +265,7 @@ def main():
         if args.cytoband:
             # Do the same with the cytoband file
             static_cytoband = os.path.join(working_dir, "static", os.path.basename(args.cytoband))
+
             if not os.path.exists(static_cytoband):
                 os.symlink(args.cytoband, static_cytoband)
 
@@ -274,13 +277,14 @@ def main():
 
             for track_pos, track in enumerate(args.tracks_path):
                 static_track = os.path.join(working_dir, "static", os.path.basename(track))
+
                 if not os.path.exists(static_track):
                     os.symlink(track, static_track)
 
                 app.config["tracks"].append(
                     {
-                        "name": os.path.splitext(os.path.basename(static_track))[0],
-                        "track": os.path.basename(static_track),
+                        "name": os.path.basename(static_track),
+                        "url": os.path.basename(static_track),
                         "type": args.tracks_type[track_pos],
                         "format": args.tracks_format[track_pos],
                     }
