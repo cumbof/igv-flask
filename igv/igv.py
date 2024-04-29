@@ -83,7 +83,7 @@ def read_params(argv):
     )
     p.add_argument(
         "--tracks-type",
-        type=os.path.abspath,
+        type=str,
         nargs="+",
         choices=list(IGV_TYPES.keys()),
         required="--tracks-path" in argv,
@@ -92,7 +92,7 @@ def read_params(argv):
     )
     p.add_argument(
         "--tracks-format",
-        type=os.path.abspath,
+        type=str,
         nargs="+",
         required="--tracks-path" in argv,
         dest="tracks_format",
