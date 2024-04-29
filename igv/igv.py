@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-"""
-Flask webserver for rendering igv.js
-"""
+"""Flask webserver for rendering igv.js"""
 
 __author__ = "Fabio Cumbo (fabio.cumbo@gmail.com)"
 __version__ = "1.4"
-__date__ = "May 19, 2023"
+__date__ = "Apr 29, 2024"
 
 import argparse as ap
 import errno
@@ -20,12 +18,27 @@ TOOL_ID = "igv-tool"
 
 IGV_VERSION = "2.15.5"
 
+# https://github.com/igvteam/igv.js/wiki/Tracks-2.0
+IGV_TYPES = {
+    "annotation": ["bed", "gff", "gff3", "gtf", "bedpe"],  # Non-quantitative genome annotations such as genes. This is the most generic track type
+    "wig": ["wig", "bigWig", "bedGraph"],  # Quantitative genomic data, such as ChIP peaks and alignment coverage
+    "alignment": ["bam", "cram"],  # Sequencing and alignments
+    "variant": ["vcf"],  # Genomic variants
+    "seg": ["seg"],  # Segmented copy number data
+    "mut": ["maf", "mut"],  # Mutation data, primarily from cancer studies
+    "interact": ["bedpe", "interact", "bigInteract"],  # Arcs representing associations or interactions between 2 genomic loci
+    "gwas": ["gwas", "bed"],  # Genome wide association data (manhattan plots)
+    "arc": ["bp", "bed"],  # RNA secondary structure
+    "junction": ["bed"],  # RNA splice junctions
+}
 
-def read_params():
-    """
-    Read and test input arguments
 
-    :return:    The ArgumentParser object
+def read_params(argv):
+    """Read and test input arguments.
+
+    Returns
+    -------
+    The ArgumentParser object
     """
 
     p = ap.ArgumentParser(
@@ -61,11 +74,29 @@ def read_params():
         help="Path to the input cytoband file"
     )
     p.add_argument(
-        "--tracks",
+        "--tracks-path",
         type=os.path.abspath,
         nargs="+",
         required=False,
+        dest="tracks_path",
         help="Path to one or more input track files"
+    )
+    p.add_argument(
+        "--tracks-type",
+        type=os.path.abspath,
+        nargs="+",
+        choices=list(IGV_TYPES.keys()),
+        required="--tracks-path" in argv,
+        dest="tracks_type",
+        help="Type of input track files"
+    )
+    p.add_argument(
+        "--tracks-format",
+        type=os.path.abspath,
+        nargs="+",
+        required="--tracks-path" in argv,
+        dest="tracks_format",
+        help="Format of input track files"
     )
     p.add_argument(
         "--igv-session",
@@ -107,30 +138,45 @@ def read_params():
         version='"{}" version {} ({})'.format(TOOL_ID, __version__, __date__),
         help='Print the "{}" version and exit'.format(TOOL_ID)
     )
-    return p.parse_args()
+    return p.parse_args(argv)
 
 
 def main():
     # Load command line parameters
-    args = read_params()
+    args = read_params(sys.argv[1:])
 
     # Check whether the input fasta file exist
     if args.input and not os.path.isfile(args.input):
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), args.input)
-    
+
     # Also check whether the input index file exist
     if args.index and not os.path.isfile(args.index):
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), args.index)
-    
+
     # Do the same for the cytoband file
     if args.cytoband and not os.path.isfile(args.cytoband):
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), args.cytoband)
-    
+
     # Do the same for tracks
-    if args.tracks:
-        for track in args.tracks:
+    if args.tracks_path:
+        if len(args.tracks_path) != len(args.tracks_type):
+            raise Exception("Unspecified track type")
+
+        if len(args.tracks_path) != len(args.tracks_format):
+            raise Exception("Unspecified track format")
+
+        for track_pos, track in enumerate(args.tracks_path):
             if not os.path.isfile(track):
                 raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), track)
+
+            if args.tracks_format[track_pos] not in IGV_TYPES[args.tracks_type[track_pos]]:
+                raise Exception(
+                    "[{}]: Unsupported format \"{}\" for track type \"{}\"".format(
+                        track,
+                        args.tracks_format[track_pos],
+                        args.tracks_type[track_pos]
+                    )
+                )
 
     # Check whether the json igv session file exist
     if args.igv_session and not os.path.isfile(args.igv_session):
@@ -162,14 +208,16 @@ def main():
             if args.cytoband:
                 session_dict["cytobandURL"] = os.path.basename(args.cytoband)
             
-            if args.tracks:
+            if args.tracks_path:
                 session_dict["tracks"] = list()
 
-                for track in args.tracks:
+                for track_pos, track in enumerate(args.tracks_path):
                     session_dict["tracks"].append(
                         {
                             "name": os.path.splitext(os.path.basename(track))[0],
-                            "url": os.path.basename(track)
+                            "url": os.path.basename(track),
+                            "type": args.tracks_type[track_pos],
+                            "format": args.tracks_format[track_pos],
                         }
                     )
 
@@ -220,11 +268,11 @@ def main():
 
             app.config["cytoband"] = os.path.basename(static_cytoband)
 
-        if args.tracks:
+        if args.tracks_path:
             # And again for tracks
             app.config["tracks"] = list()
 
-            for track in args.tracks:
+            for track_pos, track in enumerate(args.tracks_path):
                 static_track = os.path.join(working_dir, "static", os.path.basename(track))
                 if not os.path.exists(static_track):
                     os.symlink(track, static_track)
@@ -233,6 +281,8 @@ def main():
                     {
                         "name": os.path.splitext(os.path.basename(static_track))[0],
                         "track": os.path.basename(static_track),
+                        "type": args.tracks_type[track_pos],
+                        "format": args.tracks_format[track_pos],
                     }
                 )
 

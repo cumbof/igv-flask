@@ -12,7 +12,7 @@
 
 		<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/igv@{{ config['igv_version'] }}/dist/igv.js"></script>
-    
+
 		<style>
 			p.br {
 				position: absolute;
@@ -59,6 +59,8 @@
 								{
 									"name": "{{ track['name'] }}",
 									"url": "{{ url_for('static', filename=track['track']) }}",
+									"format": "{{ url_for('static', filename=track['format']) }}",
+									"type": "{{ url_for('static', filename=track['type']) }}",
 								}
 							{% endfor %}
 						]
