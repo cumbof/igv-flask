@@ -59,8 +59,14 @@
 								{
 									"name": "{{ track['name'] }}",
 									"url": "{{ url_for('static', filename=track['url']) }}",
-									"format": "{{ track['format'] }}",
-									"type": "{{ track['type'] }}",
+
+									{% if 'format' in track %}
+										"format": "{{ track['format'] }}",
+									{% endif %}
+
+									{% if 'type' in track %}
+										"type": "{{ track['type'] }}",
+									{% endif %}
 								}
 							{% endfor %}
 						]

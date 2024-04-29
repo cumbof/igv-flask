@@ -86,7 +86,6 @@ def read_params(argv):
         type=str,
         nargs="+",
         choices=list(IGV_TYPES.keys()),
-        required="--tracks-path" in argv,
         dest="tracks_type",
         help="Type of input track files"
     )
@@ -94,7 +93,6 @@ def read_params(argv):
         "--tracks-format",
         type=str,
         nargs="+",
-        required="--tracks-path" in argv,
         dest="tracks_format",
         help="Format of input track files"
     )
@@ -159,24 +157,27 @@ def main():
 
     # Do the same for tracks
     if args.tracks_path:
-        if len(args.tracks_path) != len(args.tracks_type):
-            raise Exception("Unspecified track type")
+        if args.tracks_type:
+            if len(args.tracks_path) != len(args.tracks_type):
+                raise Exception("Unspecified track type")
 
-        if len(args.tracks_path) != len(args.tracks_format):
-            raise Exception("Unspecified track format")
+        if args.tracks_format:
+            if len(args.tracks_path) != len(args.tracks_format):
+                raise Exception("Unspecified track format")
 
         for track_pos, track in enumerate(args.tracks_path):
             if not os.path.isfile(track):
                 raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), track)
 
-            if args.tracks_format[track_pos] not in IGV_TYPES[args.tracks_type[track_pos]]:
-                raise Exception(
-                    "[{}]: Unsupported format \"{}\" for track type \"{}\"".format(
-                        track,
-                        args.tracks_format[track_pos],
-                        args.tracks_type[track_pos]
+            if args.tracks_type and args.tracks_format:
+                if args.tracks_format[track_pos] not in IGV_TYPES[args.tracks_type[track_pos]]:
+                    raise Exception(
+                        "[{}]: Unsupported format \"{}\" for track type \"{}\"".format(
+                            track,
+                            args.tracks_format[track_pos],
+                            args.tracks_type[track_pos]
+                        )
                     )
-                )
 
     # Check whether the json igv session file exist
     if args.igv_session and not os.path.isfile(args.igv_session):
@@ -212,14 +213,18 @@ def main():
                 session_dict["tracks"] = list()
 
                 for track_pos, track in enumerate(args.tracks_path):
-                    session_dict["tracks"].append(
-                        {
-                            "name": os.path.basename(track),
-                            "url": os.path.basename(track),
-                            "type": args.tracks_type[track_pos],
-                            "format": args.tracks_format[track_pos],
-                        }
-                    )
+                    track_dict = {
+                        "name": os.path.basename(track),
+                        "url": os.path.basename(track),
+                    }
+
+                    if args.tracks_type:
+                        track_dict["type"] = args.tracks_type[track_pos]
+
+                    if args.tracks_format:
+                        track_dict["format"] = args.tracks_format[track_pos]
+
+                    session_dict["tracks"].append(track_dict)
 
             json.dump(session_dict, igv_session)
 
@@ -281,14 +286,18 @@ def main():
                 if not os.path.exists(static_track):
                     os.symlink(track, static_track)
 
-                app.config["tracks"].append(
-                    {
-                        "name": os.path.basename(static_track),
-                        "url": os.path.basename(static_track),
-                        "type": args.tracks_type[track_pos],
-                        "format": args.tracks_format[track_pos],
-                    }
-                )
+                track_dict = {
+                    "name": os.path.basename(static_track),
+                    "url": os.path.basename(static_track),
+                }
+
+                if args.tracks_type:
+                    track_dict["type"] = args.tracks_type[track_pos]
+
+                if args.tracks_format:
+                    track_dict["format"] = args.tracks_format[track_pos]
+
+                app.config["tracks"].append(track_dict)
 
         # Session file is used in conjunction with an input fasta only
         if args.igv_session:
