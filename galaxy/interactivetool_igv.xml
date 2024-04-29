@@ -30,12 +30,17 @@
             #set $cytoband_cleaned_name = re.sub('[^\w\-\.\s]', '_', str($cytoband.element_identifier))
             ln -sf '$cytoband' './igv/data/${cytoband_cleaned_name}.${cytoband.ext}' &&
         #end if
-        
+
+        #set $tracks_paths = list()
+        #set $tracks_types = list()
+        #set $tracks_formats = list()
+
         #for $track in $tracks:
-            #set $tracks_list = list()
-            #set $track_cleaned_name = re.sub('[^\w\-\.\s]', '_', str($track.element_identifier))
-            ln -sf '$track' './igv/data/${track_cleaned_name}.${track.ext}' &&
-            $tracks_list.append('./igv/data/${trackfile}')
+            #set $track_cleaned_name = re.sub('[^\w\-\.\s]', '_', str($track.track.element_identifier))
+            ln -sf '$track.track' './igv/data/${track_cleaned_name}.${track.track.ext}' &&
+            #$tracks_paths.append('./igv/data/${track_cleaned_name}.${track.track.ext}')
+            #$tracks_types.append('${track.track_type_selection.track_type}')
+            #$tracks_formats.append('${track.track_type_selection.track_format}')
         #end for
 
         #if $igv_session.add_session == "true":
@@ -43,7 +48,7 @@
             ln -sf '$session' './igv/data/${cleaned_session_name}.${session.ext}' &&
         #end if
 
-        igv --host '0.0.0.0' --port 5000 --gxit
+        igv --host 0.0.0.0 --port 5000 --gxit
             --input './igv/data/${input_cleaned_name}.${input.ext}'
         #if $index:
             --index './igv/data/${index_cleaned_name}.${index.ext}'
@@ -52,10 +57,18 @@
             --cytoband './igv/data/${cytoband_cleaned_name}.${cytoband.ext}'
         #end if
             --dump-session './igv/output/igv-session.json'
-        #if $tracks_list:
-            --tracks
-            #for $track in $tracks_list:
-                '#echo $track#'
+        #if $tracks_paths:
+            --tracks-path
+            #for $track_path in $tracks_paths:
+                '#echo $track_path#'
+            #end for
+            --tracks-type
+            #for $track_type in $tracks_types:
+                '#echo $track_type#'
+            #end for
+            --tracks-formats
+            #for $track_format in $tracks_formats:
+                '#echo $track_format#'
             #end for
         #end if
         #if $igv_session.add_session == "true":
@@ -77,6 +90,93 @@
 
         <repeat name="tracks" title="Add tracks" help="Select one or more tracks" min="0">
             <param name="track" type="data" format="txt,txt.gz,tabular,tabular.gz" optional="true" label="Track file (optional)" />
+
+            <conditional name="track_type_selection">
+                <param name="track_type" type="select" label="Track type">
+                    <option value="annotation" selected="true">annotation</option>
+                    <option value="wig">wig</option>
+                    <option value="alignment">alignment</option>
+                    <option value="variant">variant</option>
+                    <option value="seg">seg</option>
+                    <option value="mut">mut</option>
+                    <option value="interact">interact</option>
+                    <option value="gwas">gwas</option>
+                    <option value="arc">arc</option>
+                    <option value="junction">junction</option>
+                </param>
+
+                <when value="annotation">
+                    <param name="track_format" type="select" label="Track format">
+                        <option value="bed" selected="true">bed</option>
+                        <option value="gff">gff</option>
+                        <option value="gff3">gff3</option>
+                        <option value="gtf">gtf</option>
+                        <option value="bedpe">bedpe</option>
+                    </param>
+                </when>
+
+                <when value="wig">
+                    <param name="track_format" type="select" label="Track format">
+                        <option value="wig" selected="true">wig</option>
+                        <option value="bigWig">bigWig</option>
+                        <option value="bedGraph">bedGraph</option>
+                    </param>
+                </when>
+
+                <when value="alignment">
+                    <param name="track_format" type="select" label="Track format">
+                        <option value="bam" selected="true">bam</option>
+                        <option value="cram">cram</option>
+                    </param>
+                </when>
+
+                <when value="variant">
+                    <param name="track_format" type="select" label="Track format">
+                        <option value="vcf" selected="true">vcf</option>
+                    </param>
+                </when>
+
+                <when value="seg">
+                    <param name="track_format" type="select" label="Track format">
+                        <option value="seg" selected="true">seg</option>
+                    </param>
+                </when>
+
+                <when value="mut">
+                    <param name="track_format" type="select" label="Track format">
+                        <option value="maf" selected="true">maf</option>
+                        <option value="mut">mut</option>
+                    </param>
+                </when>
+
+                <when value="interact">
+                    <param name="track_format" type="select" label="Track format">
+                        <option value="bedpe" selected="true">bedpe</option>
+                        <option value="interact">interact</option>
+                        <option value="bigInteract">bigInteract</option>
+                    </param>
+                </when>
+
+                <when value="gwas">
+                    <param name="track_format" type="select" label="Track format">
+                        <option value="gwas" selected="true">gwas</option>
+                        <option value="bed">bed</option>
+                    </param>
+                </when>
+
+                <when value="arc">
+                    <param name="track_format" type="select" label="Track format">
+                        <option value="bp" selected="true">bp</option>
+                        <option value="bed">bed</option>
+                    </param>
+                </when>
+
+                <when value="junction">
+                    <param name="track_format" type="select" label="Track format">
+                        <option value="bed" selected="true">bed</option>
+                    </param>
+                </when>
+            </conditional>
         </repeat>
 
         <conditional name="igv_session">
